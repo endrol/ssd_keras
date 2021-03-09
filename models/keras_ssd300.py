@@ -18,15 +18,16 @@ limitations under the License.
 
 from __future__ import division
 import numpy as np
-from keras.models import Model
-from keras.layers import Input, Lambda, Activation, Conv2D, MaxPooling2D, ZeroPadding2D, Reshape, Concatenate
-from keras.regularizers import l2
-import keras.backend as K
-
-from keras_layers.keras_layer_AnchorBoxes import AnchorBoxes
-from keras_layers.keras_layer_L2Normalization import L2Normalization
-from keras_layers.keras_layer_DecodeDetections import DecodeDetections
-from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Input, Lambda, Activation, Conv2D, MaxPooling2D, ZeroPadding2D, Reshape, Concatenate
+from tensorflow.keras.regularizers import l2
+import tensorflow.keras.backend as K
+import sys
+sys.path.append('..')
+from ssd_keras.keras_layers.keras_layer_AnchorBoxes import AnchorBoxes
+from ssd_keras.keras_layers.keras_layer_L2Normalization import L2Normalization
+from ssd_keras.keras_layers.keras_layer_DecodeDetections import DecodeDetections
+from ssd_keras.keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 
 def ssd_300(image_size,
             n_classes,
@@ -417,7 +418,6 @@ def ssd_300(image_size,
     # Concatenate the class and box predictions and the anchors to one large predictions vector
     # Output shape of `predictions`: (batch, n_boxes_total, n_classes + 4 + 8)
     predictions = Concatenate(axis=2, name='predictions')([mbox_conf_softmax, mbox_loc, mbox_priorbox])
-
     if mode == 'training':
         model = Model(inputs=x, outputs=predictions)
     elif mode == 'inference':
@@ -446,12 +446,31 @@ def ssd_300(image_size,
         raise ValueError("`mode` must be one of 'training', 'inference' or 'inference_fast', but received '{}'.".format(mode))
 
     if return_predictor_sizes:
-        predictor_sizes = np.array([conv4_3_norm_mbox_conf._keras_shape[1:3],
-                                     fc7_mbox_conf._keras_shape[1:3],
-                                     conv6_2_mbox_conf._keras_shape[1:3],
-                                     conv7_2_mbox_conf._keras_shape[1:3],
-                                     conv8_2_mbox_conf._keras_shape[1:3],
-                                     conv9_2_mbox_conf._keras_shape[1:3]])
+        predictor_sizes = np.array([conv4_3_norm_mbox_conf.shape[1:3],
+                                     fc7_mbox_conf.shape[1:3],
+                                     conv6_2_mbox_conf.shape[1:3],
+                                     conv7_2_mbox_conf.shape[1:3],
+                                     conv8_2_mbox_conf.shape[1:3],
+                                     conv9_2_mbox_conf.shape[1:3]])
         return model, predictor_sizes
     else:
         return model
+
+def main():
+    model = ssd_300(image_size=(300,300,3),
+                            n_classes=5,
+                            two_boxes_for_ar1=True,
+                            scales=[0.1, 0.2, 0.37, 0.54, 0.71, 0.88, 1.05],
+                            aspect_ratios_per_layer=[[1.0, 2.0, 0.5],
+                                            [1.0, 2.0, 0.5, 3.0, 1.0/3.0],
+                                            [1.0, 2.0, 0.5, 3.0, 1.0/3.0],
+                                            [1.0, 2.0, 0.5, 3.0, 1.0/3.0],
+                                            [1.0, 2.0, 0.5],
+                                            [1.0, 2.0, 0.5]],
+                            offsets = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+                            steps = [8, 16, 32, 64, 100, 300])
+
+    model.summary()
+if __name__ == "__main__":
+    main()
+    
