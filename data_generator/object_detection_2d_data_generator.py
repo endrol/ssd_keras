@@ -738,6 +738,7 @@ class DataGenerator:
                     self.eval_neutral.append(eval_neutr)
 
         self.dataset_size = len(self.filenames)
+        import pdb; pdb.set_trace()
         self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
         if self.load_images_into_memory:
             self.images = []
