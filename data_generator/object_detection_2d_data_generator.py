@@ -32,22 +32,27 @@ from tqdm import tqdm, trange
 try:
     import h5py
 except ImportError:
-    warnings.warn("'h5py' module is missing. The fast HDF5 dataset option will be unavailable.")
+    warnings.warn(
+        "'h5py' module is missing. The fast HDF5 dataset option will be unavailable.")
 try:
     import json
 except ImportError:
-    warnings.warn("'json' module is missing. The JSON-parser will be unavailable.")
+    warnings.warn(
+        "'json' module is missing. The JSON-parser will be unavailable.")
 try:
     from bs4 import BeautifulSoup
 except ImportError:
-    warnings.warn("'BeautifulSoup' module is missing. The XML-parser will be unavailable.")
+    warnings.warn(
+        "'BeautifulSoup' module is missing. The XML-parser will be unavailable.")
 try:
     import pickle
 except ImportError:
-    warnings.warn("'pickle' module is missing. You won't be able to save parsed file lists and annotations as pickled files.")
+    warnings.warn(
+        "'pickle' module is missing. You won't be able to save parsed file lists and annotations as pickled files.")
 
-from ssd_encoder_decoder.ssd_input_encoder import SSDInputEncoder
-from data_generator.object_detection_2d_image_boxes_validation_utils import BoxFilter
+from ssd_keras.ssd_encoder_decoder.ssd_input_encoder import SSDInputEncoder
+from ssd_keras.data_generator.object_detection_2d_image_boxes_validation_utils import BoxFilter
+
 
 class DegenerateBatchError(Exception):
     '''
@@ -56,12 +61,14 @@ class DegenerateBatchError(Exception):
     '''
     pass
 
+
 class DatasetError(Exception):
     '''
     An exception class to be raised if a anything is wrong with the dataset,
     in particular if you try to generate batches when no dataset was loaded.
     '''
     pass
+
 
 class DataGenerator:
     '''
@@ -87,7 +94,8 @@ class DataGenerator:
                  labels=None,
                  image_ids=None,
                  eval_neutral=None,
-                 labels_output_format=('class_id', 'xmin', 'ymin', 'xmax', 'ymax'),
+                 labels_output_format=(
+                     'class_id', 'xmin', 'ymin', 'xmax', 'ymax'),
                  verbose=True):
         '''
         Initializes the data generator. You can either load a dataset directly here in the constructor,
@@ -136,15 +144,17 @@ class DataGenerator:
                 take a bit longer.
         '''
         self.labels_output_format = labels_output_format
-        self.labels_format={'class_id': labels_output_format.index('class_id'),
-                            'xmin': labels_output_format.index('xmin'),
-                            'ymin': labels_output_format.index('ymin'),
-                            'xmax': labels_output_format.index('xmax'),
-                            'ymax': labels_output_format.index('ymax')} # This dictionary is for internal use.
+        self.labels_format = {'class_id': labels_output_format.index('class_id'),
+                              'xmin': labels_output_format.index('xmin'),
+                              'ymin': labels_output_format.index('ymin'),
+                              'xmax': labels_output_format.index('xmax'),
+                              'ymax': labels_output_format.index('ymax')}  # This dictionary is for internal use.
 
-        self.dataset_size = 0 # As long as we haven't loaded anything yet, the dataset size is zero.
+        # As long as we haven't loaded anything yet, the dataset size is zero.
+        self.dataset_size = 0
         self.load_images_into_memory = load_images_into_memory
-        self.images = None # The only way that this list will not stay `None` is if `load_images_into_memory == True`.
+        # The only way that this list will not stay `None` is if `load_images_into_memory == True`.
+        self.images = None
 
         # `self.filenames` is a list containing all file names of the image samples (full paths).
         # Note that it does not contain the actual image files themselves. This list is one of the outputs of the parser methods.
@@ -157,17 +167,23 @@ class DataGenerator:
                     if filenames_type == 'pickle':
                         self.filenames = pickle.load(f)
                     elif filenames_type == 'text':
-                        self.filenames = [os.path.join(images_dir, line.strip()) for line in f]
+                        self.filenames = [os.path.join(
+                            images_dir, line.strip()) for line in f]
                     else:
-                        raise ValueError("`filenames_type` can be either 'text' or 'pickle'.")
+                        raise ValueError(
+                            "`filenames_type` can be either 'text' or 'pickle'.")
             else:
-                raise ValueError("`filenames` must be either a Python list/tuple or a string representing a filepath (to a pickled or text file). The value you passed is neither of the two.")
+                raise ValueError(
+                    "`filenames` must be either a Python list/tuple or a string representing a filepath (to a pickled or text file). The value you passed is neither of the two.")
             self.dataset_size = len(self.filenames)
             self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
             if load_images_into_memory:
                 self.images = []
-                if verbose: it = tqdm(self.filenames, desc='Loading images into memory', file=sys.stdout)
-                else: it = self.filenames
+                if verbose:
+                    it = tqdm(
+                        self.filenames, desc='Loading images into memory', file=sys.stdout)
+                else:
+                    it = self.filenames
                 for filename in it:
                     with Image.open(filename) as image:
                         self.images.append(np.array(image, dtype=np.uint8))
@@ -183,7 +199,8 @@ class DataGenerator:
             elif isinstance(labels, (list, tuple)):
                 self.labels = labels
             else:
-                raise ValueError("`labels` must be either a Python list/tuple or a string representing the path to a pickled file containing a list/tuple. The value you passed is neither of the two.")
+                raise ValueError(
+                    "`labels` must be either a Python list/tuple or a string representing the path to a pickled file containing a list/tuple. The value you passed is neither of the two.")
         else:
             self.labels = None
 
@@ -194,7 +211,8 @@ class DataGenerator:
             elif isinstance(image_ids, (list, tuple)):
                 self.image_ids = image_ids
             else:
-                raise ValueError("`image_ids` must be either a Python list/tuple or a string representing the path to a pickled file containing a list/tuple. The value you passed is neither of the two.")
+                raise ValueError(
+                    "`image_ids` must be either a Python list/tuple or a string representing the path to a pickled file containing a list/tuple. The value you passed is neither of the two.")
         else:
             self.image_ids = None
 
@@ -205,7 +223,8 @@ class DataGenerator:
             elif isinstance(eval_neutral, (list, tuple)):
                 self.eval_neutral = eval_neutral
             else:
-                raise ValueError("`image_ids` must be either a Python list/tuple or a string representing the path to a pickled file containing a list/tuple. The value you passed is neither of the two.")
+                raise ValueError(
+                    "`image_ids` must be either a Python list/tuple or a string representing the path to a pickled file containing a list/tuple. The value you passed is neither of the two.")
         else:
             self.eval_neutral = None
 
@@ -230,37 +249,51 @@ class DataGenerator:
 
         self.hdf5_dataset = h5py.File(self.hdf5_dataset_path, 'r')
         self.dataset_size = len(self.hdf5_dataset['images'])
-        self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32) # Instead of shuffling the HDF5 dataset or images in memory, we will shuffle this index list.
+        # Instead of shuffling the HDF5 dataset or images in memory, we will shuffle this index list.
+        self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
 
         if self.load_images_into_memory:
             self.images = []
-            if verbose: tr = trange(self.dataset_size, desc='Loading images into memory', file=sys.stdout)
-            else: tr = range(self.dataset_size)
+            if verbose:
+                tr = trange(self.dataset_size,
+                            desc='Loading images into memory', file=sys.stdout)
+            else:
+                tr = range(self.dataset_size)
             for i in tr:
-                self.images.append(self.hdf5_dataset['images'][i].reshape(self.hdf5_dataset['image_shapes'][i]))
+                self.images.append(self.hdf5_dataset['images'][i].reshape(
+                    self.hdf5_dataset['image_shapes'][i]))
 
         if self.hdf5_dataset.attrs['has_labels']:
             self.labels = []
             labels = self.hdf5_dataset['labels']
             label_shapes = self.hdf5_dataset['label_shapes']
-            if verbose: tr = trange(self.dataset_size, desc='Loading labels', file=sys.stdout)
-            else: tr = range(self.dataset_size)
+            if verbose:
+                tr = trange(self.dataset_size,
+                            desc='Loading labels', file=sys.stdout)
+            else:
+                tr = range(self.dataset_size)
             for i in tr:
                 self.labels.append(labels[i].reshape(label_shapes[i]))
 
         if self.hdf5_dataset.attrs['has_image_ids']:
             self.image_ids = []
             image_ids = self.hdf5_dataset['image_ids']
-            if verbose: tr = trange(self.dataset_size, desc='Loading image IDs', file=sys.stdout)
-            else: tr = range(self.dataset_size)
+            if verbose:
+                tr = trange(self.dataset_size,
+                            desc='Loading image IDs', file=sys.stdout)
+            else:
+                tr = range(self.dataset_size)
             for i in tr:
                 self.image_ids.append(image_ids[i])
 
         if self.hdf5_dataset.attrs['has_eval_neutral']:
             self.eval_neutral = []
             eval_neutral = self.hdf5_dataset['eval_neutral']
-            if verbose: tr = trange(self.dataset_size, desc='Loading evaluation-neutrality annotations', file=sys.stdout)
-            else: tr = range(self.dataset_size)
+            if verbose:
+                tr = trange(
+                    self.dataset_size, desc='Loading evaluation-neutrality annotations', file=sys.stdout)
+            else:
+                tr = range(self.dataset_size)
             for i in tr:
                 self.eval_neutral.append(eval_neutral[i])
 
@@ -311,7 +344,8 @@ class DataGenerator:
 
         # Before we begin, make sure that we have a labels_filename and an input_format
         if self.labels_filename is None or self.input_format is None:
-            raise ValueError("`labels_filename` and/or `input_format` have not been set yet. You need to pass them as arguments.")
+            raise ValueError(
+                "`labels_filename` and/or `input_format` have not been set yet. You need to pass them as arguments.")
 
         # Erase data that might have been parsed before
         self.filenames = []
@@ -324,77 +358,100 @@ class DataGenerator:
 
         with open(self.labels_filename, newline='') as csvfile:
             csvread = csv.reader(csvfile, delimiter=',')
-            next(csvread) # Skip the header row.
-            for row in csvread: # For every line (i.e for every bounding box) in the CSV file...
-                if self.include_classes == 'all' or int(row[self.input_format.index('class_id')].strip()) in self.include_classes: # If the class_id is among the classes that are to be included in the dataset...
-                    box = [] # Store the box class and coordinates here
-                    box.append(row[self.input_format.index('image_name')].strip()) # Select the image name column in the input format and append its content to `box`
-                    for element in self.labels_output_format: # For each element in the output format (where the elements are the class ID and the four box coordinates)...
-                        box.append(int(row[self.input_format.index(element)].strip())) # ...select the respective column in the input format and append it to `box`.
+            next(csvread)  # Skip the header row.
+            # For every line (i.e for every bounding box) in the CSV file...
+            for row in csvread:
+                # If the class_id is among the classes that are to be included in the dataset...
+                if self.include_classes == 'all' or int(row[self.input_format.index('class_id')].strip()) in self.include_classes:
+                    box = []  # Store the box class and coordinates here
+                    # Select the image name column in the input format and append its content to `box`
+                    box.append(
+                        row[self.input_format.index('image_name')].strip())
+                    # For each element in the output format (where the elements are the class ID and the four box coordinates)...
+                    for element in self.labels_output_format:
+                        # ...select the respective column in the input format and append it to `box`.
+                        box.append(
+                            int(row[self.input_format.index(element)].strip()))
                     data.append(box)
 
-        data = sorted(data) # The data needs to be sorted, otherwise the next step won't give the correct result
+        # The data needs to be sorted, otherwise the next step won't give the correct result
+        data = sorted(data)
 
         # Now that we've made sure that the data is sorted by file names,
         # we can compile the actual samples and labels lists
 
-        current_file = data[0][0] # The current image for which we're collecting the ground truth boxes
-        current_image_id = data[0][0].split('.')[0] # The image ID will be the portion of the image name before the first dot.
-        current_labels = [] # The list where we collect all ground truth boxes for a given image
+        # The current image for which we're collecting the ground truth boxes
+        current_file = data[0][0]
+        # The image ID will be the portion of the image name before the first dot.
+        current_image_id = data[0][0].split('.')[0]
+        current_labels = []  # The list where we collect all ground truth boxes for a given image
         add_to_dataset = False
         for i, box in enumerate(data):
 
-            if box[0] == current_file: # If this box (i.e. this line of the CSV file) belongs to the current image file
+            # If this box (i.e. this line of the CSV file) belongs to the current image file
+            if box[0] == current_file:
                 current_labels.append(box[1:])
-                if i == len(data)-1: # If this is the last line of the CSV file
-                    if random_sample: # In case we're not using the full dataset, but a random sample of it.
-                        p = np.random.uniform(0,1)
+                if i == len(data)-1:  # If this is the last line of the CSV file
+                    if random_sample:  # In case we're not using the full dataset, but a random sample of it.
+                        p = np.random.uniform(0, 1)
                         if p >= (1-random_sample):
-                            self.labels.append(np.stack(current_labels, axis=0))
-                            self.filenames.append(os.path.join(self.images_dir, current_file))
+                            self.labels.append(
+                                np.stack(current_labels, axis=0))
+                            self.filenames.append(os.path.join(
+                                self.images_dir, current_file))
                             self.image_ids.append(current_image_id)
                     else:
                         self.labels.append(np.stack(current_labels, axis=0))
-                        self.filenames.append(os.path.join(self.images_dir, current_file))
+                        self.filenames.append(os.path.join(
+                            self.images_dir, current_file))
                         self.image_ids.append(current_image_id)
-            else: # If this box belongs to a new image file
-                if random_sample: # In case we're not using the full dataset, but a random sample of it.
-                    p = np.random.uniform(0,1)
+            else:  # If this box belongs to a new image file
+                if random_sample:  # In case we're not using the full dataset, but a random sample of it.
+                    p = np.random.uniform(0, 1)
                     if p >= (1-random_sample):
                         self.labels.append(np.stack(current_labels, axis=0))
-                        self.filenames.append(os.path.join(self.images_dir, current_file))
+                        self.filenames.append(os.path.join(
+                            self.images_dir, current_file))
                         self.image_ids.append(current_image_id)
                 else:
                     self.labels.append(np.stack(current_labels, axis=0))
-                    self.filenames.append(os.path.join(self.images_dir, current_file))
+                    self.filenames.append(os.path.join(
+                        self.images_dir, current_file))
                     self.image_ids.append(current_image_id)
-                current_labels = [] # Reset the labels list because this is a new file.
+                # Reset the labels list because this is a new file.
+                current_labels = []
                 current_file = box[0]
                 current_image_id = box[0].split('.')[0]
                 current_labels.append(box[1:])
-                if i == len(data)-1: # If this is the last line of the CSV file
-                    if random_sample: # In case we're not using the full dataset, but a random sample of it.
-                        p = np.random.uniform(0,1)
+                if i == len(data)-1:  # If this is the last line of the CSV file
+                    if random_sample:  # In case we're not using the full dataset, but a random sample of it.
+                        p = np.random.uniform(0, 1)
                         if p >= (1-random_sample):
-                            self.labels.append(np.stack(current_labels, axis=0))
-                            self.filenames.append(os.path.join(self.images_dir, current_file))
+                            self.labels.append(
+                                np.stack(current_labels, axis=0))
+                            self.filenames.append(os.path.join(
+                                self.images_dir, current_file))
                             self.image_ids.append(current_image_id)
                     else:
                         self.labels.append(np.stack(current_labels, axis=0))
-                        self.filenames.append(os.path.join(self.images_dir, current_file))
+                        self.filenames.append(os.path.join(
+                            self.images_dir, current_file))
                         self.image_ids.append(current_image_id)
 
         self.dataset_size = len(self.filenames)
         self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
         if self.load_images_into_memory:
             self.images = []
-            if verbose: it = tqdm(self.filenames, desc='Loading images into memory', file=sys.stdout)
-            else: it = self.filenames
+            if verbose:
+                it = tqdm(self.filenames,
+                          desc='Loading images into memory', file=sys.stdout)
+            else:
+                it = self.filenames
             for filename in it:
                 with Image.open(filename) as image:
                     self.images.append(np.array(image, dtype=np.uint8))
 
-        if ret: # In case we want to return these
+        if ret:  # In case we want to return these
             return self.images, self.filenames, self.labels, self.image_ids
 
     def parse_xml(self,
@@ -407,7 +464,7 @@ class DataGenerator:
                            'chair', 'cow', 'diningtable', 'dog',
                            'horse', 'motorbike', 'person', 'pottedplant',
                            'sheep', 'sofa', 'train', 'tvmonitor'],
-                  include_classes = 'all',
+                  include_classes='all',
                   exclude_truncated=False,
                   exclude_difficult=False,
                   ret=False,
@@ -463,11 +520,15 @@ class DataGenerator:
         for images_dir, image_set_filename, annotations_dir in zip(images_dirs, image_set_filenames, annotations_dirs):
             # Read the image set file that so that we know all the IDs of all the images to be included in the dataset.
             with open(image_set_filename) as f:
-                image_ids = [line.strip() for line in f] # Note: These are strings, not integers.
+                # Note: These are strings, not integers.
+                image_ids = [line.strip() for line in f]
                 self.image_ids += image_ids
 
-            if verbose: it = tqdm(image_ids, desc="Processing image set '{}'".format(os.path.basename(image_set_filename)), file=sys.stdout)
-            else: it = image_ids
+            if verbose:
+                it = tqdm(image_ids, desc="Processing image set '{}'".format(
+                    os.path.basename(image_set_filename)), file=sys.stdout)
+            else:
+                it = image_ids
 
             # Loop over all images in this dataset.
             for image_id in it:
@@ -480,24 +541,32 @@ class DataGenerator:
                     with open(os.path.join(annotations_dir, image_id + '.xml')) as f:
                         soup = BeautifulSoup(f, 'xml')
 
-                    folder = soup.folder.text # In case we want to return the folder in addition to the image file name. Relevant for determining which dataset an image belongs to.
-                    #filename = soup.filename.text
+                    # In case we want to return the folder in addition to the image file name. Relevant for determining which dataset an image belongs to.
+                    folder = soup.folder.text
+                    # filename = soup.filename.text
 
-                    boxes = [] # We'll store all boxes for this image here.
-                    eval_neutr = [] # We'll store whether a box is annotated as "difficult" here.
-                    objects = soup.find_all('object') # Get a list of all objects in this image.
+                    boxes = []  # We'll store all boxes for this image here.
+                    # We'll store whether a box is annotated as "difficult" here.
+                    eval_neutr = []
+                    # Get a list of all objects in this image.
+                    objects = soup.find_all('object')
 
                     # Parse the data for each object.
                     for obj in objects:
                         class_name = obj.find('name', recursive=False).text
                         class_id = self.classes.index(class_name)
                         # Check whether this class is supposed to be included in the dataset.
-                        if (not self.include_classes == 'all') and (not class_id in self.include_classes): continue
+                        if (not self.include_classes == 'all') and (not class_id in self.include_classes):
+                            continue
                         pose = obj.find('pose', recursive=False).text
-                        truncated = int(obj.find('truncated', recursive=False).text)
-                        if exclude_truncated and (truncated == 1): continue
-                        difficult = int(obj.find('difficult', recursive=False).text)
-                        if exclude_difficult and (difficult == 1): continue
+                        truncated = int(
+                            obj.find('truncated', recursive=False).text)
+                        if exclude_truncated and (truncated == 1):
+                            continue
+                        difficult = int(
+                            obj.find('difficult', recursive=False).text)
+                        if exclude_difficult and (difficult == 1):
+                            continue
                         # Get the bounding box coordinates.
                         bndbox = obj.find('bndbox', recursive=False)
                         xmin = int(bndbox.xmin.text)
@@ -520,8 +589,10 @@ class DataGenerator:
                         for item in self.labels_output_format:
                             box.append(item_dict[item])
                         boxes.append(box)
-                        if difficult: eval_neutr.append(True)
-                        else: eval_neutr.append(False)
+                        if difficult:
+                            eval_neutr.append(True)
+                        else:
+                            eval_neutr.append(False)
 
                     self.labels.append(boxes)
                     self.eval_neutral.append(eval_neutr)
@@ -530,8 +601,151 @@ class DataGenerator:
         self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
         if self.load_images_into_memory:
             self.images = []
-            if verbose: it = tqdm(self.filenames, desc='Loading images into memory', file=sys.stdout)
-            else: it = self.filenames
+            if verbose:
+                it = tqdm(self.filenames,
+                          desc='Loading images into memory', file=sys.stdout)
+            else:
+                it = self.filenames
+            for filename in it:
+                with Image.open(filename) as image:
+                    self.images.append(np.array(image, dtype=np.uint8))
+
+        if ret:
+            return self.images, self.filenames, self.labels, self.image_ids, self.eval_neutral
+
+    def parse_xml_roboflow(self,
+                           data_pth,
+                           classes=['background',
+                                    'aeroplane', 'bicycle', 'bird', 'boat',
+                                    'bottle', 'bus', 'car', 'cat',
+                                    'chair', 'cow', 'diningtable', 'dog',
+                                    'horse', 'motorbike', 'person', 'pottedplant',
+                                    'sheep', 'sofa', 'train', 'tvmonitor'],
+                           include_classes='all',
+                           exclude_truncated=False,
+                           exclude_difficult=False,
+                           ret=False,
+                           verbose=True):
+        '''
+        This is an XML parser for the Pascal VOC datasets. It might be applicable to other datasets with minor changes to
+        the code, but in its current form it expects the data format and XML tags of the Pascal VOC datasets.
+
+        Arguments:
+            images_dirs (list): A list of strings, where each string is the path of a directory that
+                contains images that are to be part of the dataset. This allows you to aggregate multiple datasets
+                into one (e.g. one directory that contains the images for Pascal VOC 2007, another that contains
+                the images for Pascal VOC 2012, etc.).
+            image_set_filenames (list): A list of strings, where each string is the path of the text file with the image
+                set to be loaded. Must be one file per image directory given. These text files define what images in the
+                respective image directories are to be part of the dataset and simply contains one image ID per line
+                and nothing else.
+            annotations_dirs (list, optional): A list of strings, where each string is the path of a directory that
+                contains the annotations (XML files) that belong to the images in the respective image directories given.
+                The directories must contain one XML file per image and the name of an XML file must be the image ID
+                of the image it belongs to. The content of the XML files must be in the Pascal VOC format.
+            classes (list, optional): A list containing the names of the object classes as found in the
+                `name` XML tags. Must include the class `background` as the first list item. The order of this list
+                defines the class IDs.
+            include_classes (list, optional): Either 'all' or a list of integers containing the class IDs that
+                are to be included in the dataset. If 'all', all ground truth boxes will be included in the dataset.
+            exclude_truncated (bool, optional): If `True`, excludes boxes that are labeled as 'truncated'.
+            exclude_difficult (bool, optional): If `True`, excludes boxes that are labeled as 'difficult'.
+            ret (bool, optional): Whether or not to return the outputs of the parser.
+            verbose (bool, optional): If `True`, prints out the progress for operations that may take a bit longer.
+
+        Returns:
+            None by default, optionally lists for whichever are available of images, image filenames, labels, image IDs,
+            and a list indicating which boxes are annotated with the label "difficult".
+        '''
+        # Set class members.
+        self.classes = classes
+        self.include_classes = include_classes
+
+        # Erase data that might have been parsed before.
+        self.filenames = []
+        self.image_ids = []
+        self.labels = []
+        self.eval_neutral = []
+
+        # Loop over all images in this dataset.
+        files = os.listdir(data_pth)
+
+        for file in files:
+            if 'jpg' in file:
+                filename = os.path.split(file)[1]
+                self.filenames.append(file)
+            elif 'xml' in file:
+                   # Parse the XML file for this image.
+                filename = os.path.split()[1]
+                self.image_ids += filename[:-4]
+                with open(file) as f:
+                    soup = BeautifulSoup(f, 'xml')
+
+                    # In case we want to return the folder in addition to the image file name. Relevant for determining which dataset an image belongs to.
+                    folder = soup.folder.text
+                    # filename = soup.filename.text
+
+                    boxes = []  # We'll store all boxes for this image here.
+                    # We'll store whether a box is annotated as "difficult" here.
+                    eval_neutr = []
+                    # Get a list of all objects in this image.
+                    objects = soup.find_all('object')
+
+                    # Parse the data for each object.
+                    for obj in objects:
+                        class_name = obj.find('name', recursive=False).text
+                        class_id = self.classes.index(class_name)
+                        # Check whether this class is supposed to be included in the dataset.
+                        if (not self.include_classes == 'all') and (not class_id in self.include_classes):
+                            continue
+                        pose = obj.find('pose', recursive=False).text
+                        truncated = int(
+                            obj.find('truncated', recursive=False).text)
+                        if exclude_truncated and (truncated == 1):
+                            continue
+                        difficult = int(
+                            obj.find('difficult', recursive=False).text)
+                        if exclude_difficult and (difficult == 1):
+                            continue
+                        # Get the bounding box coordinates.
+                        bndbox = obj.find('bndbox', recursive=False)
+                        xmin = int(bndbox.xmin.text)
+                        ymin = int(bndbox.ymin.text)
+                        xmax = int(bndbox.xmax.text)
+                        ymax = int(bndbox.ymax.text)
+                        item_dict = {'folder': folder,
+                                     'image_name': filename,
+                                     'image_id': filename[:-4],
+                                     'class_name': class_name,
+                                     'class_id': class_id,
+                                     'pose': pose,
+                                     'truncated': truncated,
+                                     'difficult': difficult,
+                                     'xmin': xmin,
+                                     'ymin': ymin,
+                                     'xmax': xmax,
+                                     'ymax': ymax}
+                        box = []
+                        for item in self.labels_output_format:
+                            box.append(item_dict[item])
+                        boxes.append(box)
+                        if difficult:
+                            eval_neutr.append(True)
+                        else:
+                            eval_neutr.append(False)
+
+                    self.labels.append(boxes)
+                    self.eval_neutral.append(eval_neutr)
+
+        self.dataset_size = len(self.filenames)
+        self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
+        if self.load_images_into_memory:
+            self.images = []
+            if verbose:
+                it = tqdm(self.filenames,
+                          desc='Loading images into memory', file=sys.stdout)
+            else:
+                it = self.filenames
             for filename in it:
                 with Image.open(filename) as image:
                     self.images.append(np.array(image, dtype=np.uint8))
@@ -588,11 +802,16 @@ class DataGenerator:
         # into a neural network must be consecutive, we'll save both the original
         # (non-consecutive) IDs as well as transformed maps.
         # We'll save both the map between the original
-        self.cats_to_names = {} # The map between class names (values) and their original IDs (keys)
-        self.classes_to_names = [] # A list of the class names with their indices representing the transformed IDs
-        self.classes_to_names.append('background') # Need to add the background class first so that the indexing is right.
-        self.cats_to_classes = {} # A dictionary that maps between the original (keys) and the transformed IDs (values)
-        self.classes_to_cats = {} # A dictionary that maps between the transformed (keys) and the original IDs (values)
+        # The map between class names (values) and their original IDs (keys)
+        self.cats_to_names = {}
+        # A list of the class names with their indices representing the transformed IDs
+        self.classes_to_names = []
+        # Need to add the background class first so that the indexing is right.
+        self.classes_to_names.append('background')
+        # A dictionary that maps between the original (keys) and the transformed IDs (values)
+        self.cats_to_classes = {}
+        # A dictionary that maps between the transformed (keys) and the original IDs (values)
+        self.classes_to_cats = {}
         for i, cat in enumerate(annotations['categories']):
             self.cats_to_names[cat['id']] = cat['name']
             self.classes_to_names.append(cat['name'])
@@ -610,15 +829,20 @@ class DataGenerator:
                 # and whose values are the annotations for the respective image ID.
                 image_ids_to_annotations = defaultdict(list)
                 for annotation in annotations['annotations']:
-                    image_ids_to_annotations[annotation['image_id']].append(annotation)
+                    image_ids_to_annotations[annotation['image_id']].append(
+                        annotation)
 
-            if verbose: it = tqdm(annotations['images'], desc="Processing '{}'".format(os.path.basename(annotations_filename)), file=sys.stdout)
-            else: it = annotations['images']
+            if verbose:
+                it = tqdm(annotations['images'], desc="Processing '{}'".format(
+                    os.path.basename(annotations_filename)), file=sys.stdout)
+            else:
+                it = annotations['images']
 
             # Loop over all images in this dataset.
             for img in it:
 
-                self.filenames.append(os.path.join(images_dir, img['file_name']))
+                self.filenames.append(os.path.join(
+                    images_dir, img['file_name']))
                 self.image_ids.append(img['id'])
 
                 if ground_truth_available:
@@ -628,7 +852,8 @@ class DataGenerator:
                     for annotation in annotations:
                         cat_id = annotation['category_id']
                         # Check if this class is supposed to be included in the dataset.
-                        if (not self.include_classes == 'all') and (not cat_id in self.include_classes): continue
+                        if (not self.include_classes == 'all') and (not cat_id in self.include_classes):
+                            continue
                         # Transform the original class ID to fit in the sequence of consecutive IDs.
                         class_id = self.cats_to_classes[cat_id]
                         xmin = annotation['bbox'][0]
@@ -655,8 +880,11 @@ class DataGenerator:
         self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
         if self.load_images_into_memory:
             self.images = []
-            if verbose: it = tqdm(self.filenames, desc='Loading images into memory', file=sys.stdout)
-            else: it = self.filenames
+            if verbose:
+                it = tqdm(self.filenames,
+                          desc='Loading images into memory', file=sys.stdout)
+            else:
+                it = self.filenames
             for filename in it:
                 with Image.open(filename) as image:
                     self.images.append(np.array(image, dtype=np.uint8))
@@ -712,15 +940,20 @@ class DataGenerator:
         # Create a few attributes that tell us what this dataset contains.
         # The dataset will obviously always contain images, but maybe it will
         # also contain labels, image IDs, etc.
-        hdf5_dataset.attrs.create(name='has_labels', data=False, shape=None, dtype=np.bool_)
-        hdf5_dataset.attrs.create(name='has_image_ids', data=False, shape=None, dtype=np.bool_)
-        hdf5_dataset.attrs.create(name='has_eval_neutral', data=False, shape=None, dtype=np.bool_)
+        hdf5_dataset.attrs.create(
+            name='has_labels', data=False, shape=None, dtype=np.bool_)
+        hdf5_dataset.attrs.create(
+            name='has_image_ids', data=False, shape=None, dtype=np.bool_)
+        hdf5_dataset.attrs.create(
+            name='has_eval_neutral', data=False, shape=None, dtype=np.bool_)
         # It's useful to be able to quickly check whether the images in a dataset all
         # have the same size or not, so add a boolean attribute for that.
         if variable_image_size and not resize:
-            hdf5_dataset.attrs.create(name='variable_image_size', data=True, shape=None, dtype=np.bool_)
+            hdf5_dataset.attrs.create(
+                name='variable_image_size', data=True, shape=None, dtype=np.bool_)
         else:
-            hdf5_dataset.attrs.create(name='variable_image_size', data=False, shape=None, dtype=np.bool_)
+            hdf5_dataset.attrs.create(
+                name='variable_image_size', data=False, shape=None, dtype=np.bool_)
 
         # Create the dataset in which the images will be stored as flattened arrays.
         # This allows us, among other things, to store images of variable size.
@@ -732,7 +965,8 @@ class DataGenerator:
         # Create the dataset that will hold the image heights, widths and channels that
         # we need in order to reconstruct the images from the flattened arrays later.
         hdf5_image_shapes = hdf5_dataset.create_dataset(name='image_shapes',
-                                                        shape=(dataset_size, 3),
+                                                        shape=(
+                                                            dataset_size, 3),
                                                         maxshape=(None, 3),
                                                         dtype=np.int32)
 
@@ -747,7 +981,8 @@ class DataGenerator:
             # Create the dataset that will hold the dimensions of the labels arrays for
             # each image so that we can restore the labels from the flattened arrays later.
             hdf5_label_shapes = hdf5_dataset.create_dataset(name='label_shapes',
-                                                            shape=(dataset_size, 2),
+                                                            shape=(
+                                                                dataset_size, 2),
                                                             maxshape=(None, 2),
                                                             dtype=np.int32)
 
@@ -766,14 +1001,16 @@ class DataGenerator:
 
             # Create the dataset in which the labels will be stored as flattened arrays.
             hdf5_eval_neutral = hdf5_dataset.create_dataset(name='eval_neutral',
-                                                            shape=(dataset_size,),
+                                                            shape=(
+                                                                dataset_size,),
                                                             maxshape=(None),
                                                             dtype=h5py.special_dtype(vlen=np.bool_))
 
             hdf5_dataset.attrs.modify(name='has_eval_neutral', value=True)
 
         if verbose:
-            tr = trange(dataset_size, desc='Creating HDF5 dataset', file=sys.stdout)
+            tr = trange(dataset_size, desc='Creating HDF5 dataset',
+                        file=sys.stdout)
         else:
             tr = range(dataset_size)
 
@@ -792,7 +1029,7 @@ class DataGenerator:
                     if image.shape[2] == 1:
                         image = np.concatenate([image] * 3, axis=-1)
                     elif image.shape[2] == 4:
-                        image = image[:,:,:3]
+                        image = image[:, :, :3]
 
                 if resize:
                     image = cv2.resize(image, dsize=(resize[1], resize[0]))
@@ -825,7 +1062,8 @@ class DataGenerator:
         self.hdf5_dataset = h5py.File(file_path, 'r')
         self.hdf5_dataset_path = file_path
         self.dataset_size = len(self.hdf5_dataset['images'])
-        self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32) # Instead of shuffling the HDF5 dataset, we will shuffle this index list.
+        # Instead of shuffling the HDF5 dataset, we will shuffle this index list.
+        self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
 
     def generate(self,
                  batch_size=32,
@@ -907,7 +1145,8 @@ class DataGenerator:
         '''
 
         if self.dataset_size == 0:
-            raise DatasetError("Cannot generate batches because you did not load a dataset.")
+            raise DatasetError(
+                "Cannot generate batches because you did not load a dataset.")
 
         #############################################################################################
         # Warn if any of the set returns aren't possible.
@@ -982,7 +1221,8 @@ class DataGenerator:
                         objects_to_shuffle.append(self.image_ids)
                     if not (self.eval_neutral is None):
                         objects_to_shuffle.append(self.eval_neutral)
-                    shuffled_objects = sklearn.utils.shuffle(*objects_to_shuffle)
+                    shuffled_objects = sklearn.utils.shuffle(
+                        *objects_to_shuffle)
                     for i in range(len(objects_to_shuffle)):
                         objects_to_shuffle[i][:] = shuffled_objects[i]
 
@@ -1005,7 +1245,8 @@ class DataGenerator:
                     batch_filenames = None
             elif not (self.hdf5_dataset is None):
                 for i in batch_indices:
-                    batch_X.append(self.hdf5_dataset['images'][i].reshape(self.hdf5_dataset['image_shapes'][i]))
+                    batch_X.append(self.hdf5_dataset['images'][i].reshape(
+                        self.hdf5_dataset['image_shapes'][i]))
                 if not (self.filenames is None):
                     batch_filenames = self.filenames[current:current+batch_size]
                 else:
@@ -1034,9 +1275,11 @@ class DataGenerator:
                 batch_image_ids = None
 
             if 'original_images' in returns:
-                batch_original_images = deepcopy(batch_X) # The original, unaltered images
+                # The original, unaltered images
+                batch_original_images = deepcopy(batch_X)
             if 'original_labels' in returns:
-                batch_original_labels = deepcopy(batch_y) # The original, unaltered labels
+                # The original, unaltered labels
+                batch_original_labels = deepcopy(batch_y)
 
             current += batch_size
 
@@ -1044,7 +1287,8 @@ class DataGenerator:
             # Maybe perform image transformations.
             #########################################################################################
 
-            batch_items_to_remove = [] # In case we need to remove any images from the batch, store their indices in this list.
+            # In case we need to remove any images from the batch, store their indices in this list.
+            batch_items_to_remove = []
             batch_inverse_transforms = []
 
             for i in range(len(batch_X)):
@@ -1068,12 +1312,15 @@ class DataGenerator:
                         if not (self.labels is None):
 
                             if ('inverse_transform' in returns) and ('return_inverter' in inspect.signature(transform).parameters):
-                                batch_X[i], batch_y[i], inverse_transform = transform(batch_X[i], batch_y[i], return_inverter=True)
+                                batch_X[i], batch_y[i], inverse_transform = transform(
+                                    batch_X[i], batch_y[i], return_inverter=True)
                                 inverse_transforms.append(inverse_transform)
                             else:
-                                batch_X[i], batch_y[i] = transform(batch_X[i], batch_y[i])
+                                batch_X[i], batch_y[i] = transform(
+                                    batch_X[i], batch_y[i])
 
-                            if batch_X[i] is None: # In case the transform failed to produce an output image, which is possible for some random transforms.
+                            # In case the transform failed to produce an output image, which is possible for some random transforms.
+                            if batch_X[i] is None:
                                 batch_items_to_remove.append(i)
                                 batch_inverse_transforms.append([])
                                 continue
@@ -1081,7 +1328,8 @@ class DataGenerator:
                         else:
 
                             if ('inverse_transform' in returns) and ('return_inverter' in inspect.signature(transform).parameters):
-                                batch_X[i], inverse_transform = transform(batch_X[i], return_inverter=True)
+                                batch_X[i], inverse_transform = transform(
+                                    batch_X[i], return_inverter=True)
                                 inverse_transforms.append(inverse_transform)
                             else:
                                 batch_X[i] = transform(batch_X[i])
@@ -1099,7 +1347,7 @@ class DataGenerator:
                     xmax = self.labels_format['xmax']
                     ymax = self.labels_format['ymax']
 
-                    if np.any(batch_y[i][:,xmax] - batch_y[i][:,xmin] <= 0) or np.any(batch_y[i][:,ymax] - batch_y[i][:,ymin] <= 0):
+                    if np.any(batch_y[i][:, xmax] - batch_y[i][:, xmin] <= 0) or np.any(batch_y[i][:, ymax] - batch_y[i][:, ymin] <= 0):
                         if degenerate_box_handling == 'warn':
                             warnings.warn("Detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, batch_y[i]) +
                                           "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. " +
@@ -1120,12 +1368,18 @@ class DataGenerator:
                     # This isn't efficient, but it hopefully shouldn't need to be done often anyway.
                     batch_X.pop(j)
                     batch_filenames.pop(j)
-                    if batch_inverse_transforms: batch_inverse_transforms.pop(j)
-                    if not (self.labels is None): batch_y.pop(j)
-                    if not (self.image_ids is None): batch_image_ids.pop(j)
-                    if not (self.eval_neutral is None): batch_eval_neutral.pop(j)
-                    if 'original_images' in returns: batch_original_images.pop(j)
-                    if 'original_labels' in returns and not (self.labels is None): batch_original_labels.pop(j)
+                    if batch_inverse_transforms:
+                        batch_inverse_transforms.pop(j)
+                    if not (self.labels is None):
+                        batch_y.pop(j)
+                    if not (self.image_ids is None):
+                        batch_image_ids.pop(j)
+                    if not (self.eval_neutral is None):
+                        batch_eval_neutral.pop(j)
+                    if 'original_images' in returns:
+                        batch_original_images.pop(j)
+                    if 'original_labels' in returns and not (self.labels is None):
+                        batch_original_labels.pop(j)
 
             #########################################################################################
 
@@ -1146,7 +1400,8 @@ class DataGenerator:
             if not (label_encoder is None or self.labels is None):
 
                 if ('matched_anchors' in returns) and isinstance(label_encoder, SSDInputEncoder):
-                    batch_y_encoded, batch_matched_anchors = label_encoder(batch_y, diagnostics=True)
+                    batch_y_encoded, batch_matched_anchors = label_encoder(
+                        batch_y, diagnostics=True)
                 else:
                     batch_y_encoded = label_encoder(batch_y, diagnostics=False)
                     batch_matched_anchors = None
@@ -1160,16 +1415,26 @@ class DataGenerator:
             #########################################################################################
 
             ret = []
-            if 'processed_images' in returns: ret.append(batch_X)
-            if 'encoded_labels' in returns: ret.append(batch_y_encoded)
-            if 'matched_anchors' in returns: ret.append(batch_matched_anchors)
-            if 'processed_labels' in returns: ret.append(batch_y)
-            if 'filenames' in returns: ret.append(batch_filenames)
-            if 'image_ids' in returns: ret.append(batch_image_ids)
-            if 'evaluation-neutral' in returns: ret.append(batch_eval_neutral)
-            if 'inverse_transform' in returns: ret.append(batch_inverse_transforms)
-            if 'original_images' in returns: ret.append(batch_original_images)
-            if 'original_labels' in returns: ret.append(batch_original_labels)
+            if 'processed_images' in returns:
+                ret.append(batch_X)
+            if 'encoded_labels' in returns:
+                ret.append(batch_y_encoded)
+            if 'matched_anchors' in returns:
+                ret.append(batch_matched_anchors)
+            if 'processed_labels' in returns:
+                ret.append(batch_y)
+            if 'filenames' in returns:
+                ret.append(batch_filenames)
+            if 'image_ids' in returns:
+                ret.append(batch_image_ids)
+            if 'evaluation-neutral' in returns:
+                ret.append(batch_eval_neutral)
+            if 'inverse_transform' in returns:
+                ret.append(batch_inverse_transforms)
+            if 'original_images' in returns:
+                ret.append(batch_original_images)
+            if 'original_labels' in returns:
+                ret.append(batch_original_labels)
 
             yield ret
 
