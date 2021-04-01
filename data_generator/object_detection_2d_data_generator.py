@@ -669,15 +669,16 @@ class DataGenerator:
 
         # Loop over all images in this dataset.
         files = os.listdir(data_pth)
-
         for file in files:
-            if 'jpg' in file:
+            file = data_pth+'/'+file
+
+            if 'xml' not in file:
                 filename = os.path.split(file)[1]
                 self.filenames.append(file)
-            elif 'xml' in file:
+            else:
                    # Parse the XML file for this image.
-                filename = os.path.split()[1]
-                self.image_ids += filename[:-4]
+                filename = os.path.split(file)[1]
+                self.image_ids.append(filename[:-4])
                 with open(file) as f:
                     soup = BeautifulSoup(f, 'xml')
 
