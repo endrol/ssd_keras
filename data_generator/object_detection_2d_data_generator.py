@@ -739,7 +739,6 @@ class DataGenerator:
                     self.eval_neutral.append(eval_neutr)
 
         self.dataset_size = len(self.filenames)
-        import pdb; pdb.set_trace()
         self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32)
         if self.load_images_into_memory:
             self.images = []
@@ -1438,7 +1437,7 @@ class DataGenerator:
             if 'original_labels' in returns:
                 ret.append(batch_original_labels)
 
-            yield ret
+            yield ret[0], ret[1]
 
     def save_dataset(self,
                      filenames_path='filenames.pkl',
