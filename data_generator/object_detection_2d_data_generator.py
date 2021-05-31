@@ -1437,7 +1437,7 @@ class DataGenerator:
             if 'original_labels' in returns:
                 ret.append(batch_original_labels)
 
-            yield ret[0], ret[1]
+            yield (ret[0], ret[1])
 
     def save_dataset(self,
                      filenames_path='filenames.pkl',

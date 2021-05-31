@@ -1,15 +1,11 @@
 #! /usr/bin/env python
 '''
 The Keras-compatible loss function for the SSD model. Currently supports TensorFlow only.
-
 Copyright (C) 2018 Pierluigi Ferrari
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -57,7 +53,6 @@ class SSDLoss:
     def smooth_L1_loss(self, y_true, y_pred):
         '''
         Compute smooth L1 loss, see references.
-
         Arguments:
             y_true (nD tensor): A TensorFlow tensor of any shape containing the ground truth data.
                 In this context, the expected tensor has shape `(batch_size, #boxes, 4)` and
@@ -65,11 +60,9 @@ class SSDLoss:
                 contains `(xmin, xmax, ymin, ymax)`.
             y_pred (nD tensor): A TensorFlow tensor of identical structure to `y_true` containing
                 the predicted data, in this context the predicted bounding box coordinates.
-
         Returns:
             The smooth L1 loss, a nD-1 Tensorflow tensor. In this context a 2D tensor
             of shape (batch, n_boxes_total).
-
         References:
             https://arxiv.org/abs/1504.08083
         '''
@@ -81,14 +74,12 @@ class SSDLoss:
     def log_loss(self, y_true, y_pred):
         '''
         Compute the softmax log loss.
-
         Arguments:
             y_true (nD tensor): A TensorFlow tensor of any shape containing the ground truth data.
                 In this context, the expected tensor has shape (batch_size, #boxes, #classes)
                 and contains the ground truth bounding box categories.
             y_pred (nD tensor): A TensorFlow tensor of identical structure to `y_true` containing
                 the predicted data, in this context the predicted bounding box categories.
-
         Returns:
             The softmax log loss, a nD-1 Tensorflow tensor. In this context a 2D tensor
             of shape (batch, n_boxes_total).
@@ -107,7 +98,6 @@ class SSDLoss:
     def compute_loss(self, y_true, y_pred):
         '''
         Compute the loss of the SSD model prediction against the ground truth.
-
         Arguments:
             y_true (array): A Numpy array of shape `(batch_size, #boxes, #classes + 12)`,
                 where `#boxes` is the total number of boxes that the model predicts
@@ -126,7 +116,6 @@ class SSDLoss:
                 to that of `y_true`, i.e. `(batch_size, #boxes, #classes + 12)`.
                 The last axis must contain entries in the format
                 `[classes one-hot encoded, 4 predicted box coordinate offsets, 8 arbitrary entries]`.
-
         Returns:
             A scalar, the total multitask loss for classification and localization.
         '''
